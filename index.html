@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habit Tracker Life</title>
+<meta name="description" content="Bảng theo dõi thói quen theo tháng, miễn phí, không cần tài khoản. Tick mỗi ngày, xem tiến độ, chuỗi ngày và thống kê. Dữ liệu chỉ nằm trên máy bạn.">
+
+<!-- Icon: tab trình duyệt, màn hình chính iPhone -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<!-- Màu thanh địa chỉ trên điện thoại -->
+<meta name="theme-color" content="#f3f3f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
+
+<!-- Ảnh & mô tả khi chia sẻ link (Facebook, Zalo, Messenger, X…).
+     Sau khi đăng web: đổi og:url và og:image thành địa chỉ đầy đủ, ví dụ https://ten-mien-cua-ban/icons/og-image.png -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:site_name" content="Habit Tracker Life">
+<meta property="og:title" content="Habit Tracker Life – Theo dõi thói quen mỗi ngày">
+<meta property="og:description" content="Miễn phí, không cần tài khoản. Tick mỗi ngày, xem tiến độ và chuỗi ngày. Dữ liệu chỉ nằm trên máy bạn.">
+<meta property="og:url" content="https://example.com/">
+<meta property="og:image" content="https://example.com/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Habit Tracker Life – lưới ô tick thói quen">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title-bar">
+    <button class="nav" id="prevMonth" type="button" aria-label="Tháng trước">←</button>
+    <h1 id="title">Thói quen</h1>
+    <button class="nav" id="nextMonth" type="button" aria-label="Tháng sau">→</button>
+    <div class="record" id="record" role="status" aria-live="polite"></div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="todayBtn" type="button">Hôm nay</button>
+    <button class="btn" id="exportBtn" type="button" title="Tải file sao lưu (.json) về máy">Xuất dữ liệu</button>
+    <button class="btn" id="importBtn" type="button" title="Mở file sao lưu (.json)">Nhập dữ liệu</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <button class="btn" id="resetBtn" type="button">Reset tháng</button>
+    <button class="btn" id="themeBtn" type="button" aria-label="Đổi chế độ sáng/tối">◐ Tối</button>  </div>
+  <div class="motto-row">
+    <p class="motto" id="motto" contenteditable="true" spellcheck="false" role="textbox" aria-label="Khẩu hiệu"></p>
+    <span class="motto-hint">✎ bấm để sửa</span>
+  </div>
+</header>
+
+<main class="layout">
+  <div class="main-col">
+    <section class="card" aria-labelledby="trackerTitle">
+      <h2 class="bar-title"><span id="trackerTitle">Tiến độ &amp; check-in</span>
+        <button class="mini-btn" id="addHabitBtn" type="button">+ Thêm thói quen</button></h2>
+      <div class="scroller" id="gridScroller"><table class="grid" id="grid"></table></div>
+    </section>
+
+    <section class="card" aria-labelledby="analysisTitle">
+      <h2 class="bar-title" id="analysisTitle">Phân tích</h2>
+      <div class="scroller"><table class="analysis" id="analysis"></table></div>
+    </section>
+
+  </div>
+
+  <aside class="side-col">
+    <section class="card" aria-labelledby="overallTitle">
+      <h2 class="bar-title" id="overallTitle">Tổng quan tháng</h2>
+      <div class="stat-tiles">
+        <div class="tile"><div class="k">Mục tiêu</div><div class="v" id="statGoal">0</div></div>
+        <div class="tile"><div class="k">Đã làm</div><div class="v" id="statDone">0</div></div>
+        <div class="tile"><div class="k">Còn lại</div><div class="v" id="statLeft">0</div></div>
+      </div>
+      <div class="donut-wrap">
+        <svg class="donut" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="bg" cx="60" cy="60" r="52" fill="none" stroke-width="14"/>
+          <circle class="fg" id="donutFg" cx="60" cy="60" r="52" fill="none" stroke-width="14" transform="rotate(-90 60 60)"/>
+          <line class="mark" id="donutMark" x1="60" y1="1" x2="60" y2="17"/>
+        </svg>
+        <div class="donut-center"><div class="big" id="donutPct">0%</div><div class="small">của tháng</div></div>
+        <span class="milestone" id="milestone"></span>
+      </div>
+      <div class="legend"><span><i class="lg-done"></i>Đã làm</span><span><i class="lg-left"></i>Còn lại</span><span><i class="lg-mark"></i>Mốc hôm nay</span></div>
+      <div class="pace-row" title="Đã làm so với số lần cần có tính tới hôm nay">
+        <div><div class="k">Đúng tiến độ</div><div class="hint" id="paceHint"></div></div>
+        <div class="v" id="paceVal">—</div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="topTitle">
+      <h2 class="bar-title" id="topTitle">Top 10 thói quen</h2>
+      <ol class="top10" id="top10"></ol>
+      <p class="top-empty" id="topEmpty" hidden>Chưa có thói quen nào.</p>
+    </section>
+  </aside>
+</main>
+
+<p class="footnote">Dữ liệu chỉ được lưu trong trình duyệt của bạn (localStorage), mỗi tháng lưu riêng, không gửi đi đâu cả.
+  Xóa dữ liệu trình duyệt hoặc dùng chế độ ẩn danh sẽ mất dữ liệu – hãy bấm Xuất dữ liệu để sao lưu định kỳ.<br>
+  <span id="shortcutHint"></span></p>
+
+<dialog id="habitDialog" aria-labelledby="dlgTitle">
+  <form id="habitForm" method="dialog">
+    <h2 class="bar-title" id="dlgTitle">Thêm thói quen</h2>
+    <div class="dlg-body">
+      <label class="field"><span>Tên thói quen</span>
+        <input class="input" id="fName" maxlength="60" required autocomplete="off"></label>
+      <div class="field"><span>Emoji</span>
+        <div class="emoji-row">
+          <input class="input" id="fEmoji" aria-label="Emoji tùy chỉnh" autocomplete="off">
+          <span class="hint">Chọn bên dưới hoặc gõ emoji bất kỳ</span>
+        </div>
+        <div class="emoji-grid" id="emojiGrid"></div>
+      </div>
+      <div class="field"><span>Tần suất</span>
+        <div class="freq-row">
+          <select class="input" id="fFreq" aria-label="Tần suất">
+            <option value="daily">Hằng ngày</option>
+            <option value="weekly">Một số lần mỗi tuần</option>
+          </select>
+          <label class="perweek" id="perWeekWrap" hidden>
+            <input class="input" id="fPerWeek" type="number" min="1" max="6" value="3" inputmode="numeric" aria-label="Số lần mỗi tuần"> lần / tuần
+          </label>
+        </div>
+        <div class="hint">Thói quen theo tuần: streak tính theo tuần, và không bị trừ điểm vào ngày nghỉ.</div>
+      </div>
+      <label class="field"><span>Mục tiêu (số lần / tháng)</span>
+        <input class="input" id="fGoal" type="number" min="1" inputmode="numeric">
+        <div class="hint" id="goalHint"></div></label>
+      <label class="check-row" id="forwardWrap" hidden>
+        <input type="checkbox" id="fForward" checked> <span id="forwardText">Áp dụng cho các tháng sau đã tạo</span>
+      </label>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn danger" id="deleteHabitBtn" type="button">Xóa</button>
+      <button class="btn" id="cancelDlgBtn" type="button">Hủy</button>
+      <button class="btn primary" type="submit">Lưu</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/core.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
